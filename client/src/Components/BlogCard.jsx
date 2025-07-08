@@ -9,7 +9,7 @@ const BlogCard = ({ blog }) => {
     const navigate = useNavigate();
 
   return (
-    // Main card container
+    
     <div onClick={()=>navigate(`/blog/${_id}`)} className="bg-white rounded-2xl shadow-lg overflow-hidden transition-transform transform hover:-translate-y-2 hover:shadow-2xl duration-300 ease-in-out">
       <img className="w-full h-48 object-cover" src={image} alt={title} />
 
