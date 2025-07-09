@@ -1,7 +1,8 @@
-import React from 'react'
+
 import NavBar from '../Components/NavBar'
 import Header from '../Components/Header'
 import BlogPost from '../Components/BlogPost'
+import Footer from '../Components/Footer'
 
 const Home = () => {
   return (
@@ -9,6 +10,7 @@ const Home = () => {
     <NavBar/>
     <Header/>
     <BlogPost/>
+    <Footer/>
     </>
   )
 }
