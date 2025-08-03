@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors'; 
 // import { connect } from 'mongoose';
 import connectDB from './config/db.js';
+import adminRouter from './routes/adminRoutes.js';
 
 const app = express();
 await connectDB();
@@ -12,9 +13,13 @@ await connectDB();
 app.use(cors());
 app.use(express.json());
 
+
+// Routes
+
 app.get('/', (req, res) => {
   res.send('Welcome to the AiBlogger App Server!');
 });
+app.use('/api/admin', adminRouter);
 
 
 const PORT = process.env.PORT || 3000;
