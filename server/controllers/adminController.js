@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
-import Blog from "../models/Blog";
+import Blog from "../models/blog.js";
+import Comment from "../models/comments.js";
 
 export const adminLogin = async (req, res) => {
   try {
@@ -30,23 +31,35 @@ export const adminLogin = async (req, res) => {
   }
 };
 
-const getallBlogAdmins = async (req, res) => {
+export const getallBlogAdmins = async (req, res) => {
   try {
-    const blogs = await Blog.find({ }).sort({ createdAt: -1 });
+    const blogs = await Blog.find({}).sort({ createdAt: -1 });
     res.status(200).json({ success: true, blogs });
   } catch (error) {
-     res.status(500).json({ success: false, message: error.message || "Internal Server Error" });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
   }
-}
+};
 
 export const getAllComments = async (req, res) => {
   try {
-    const comments = await Comment.find({}).populate('blog').sort({ createdAt: -1 });
+    const comments = await Comment.find({})
+      .populate("blog")
+      .sort({ createdAt: -1 });
     res.status(200).json({ success: true, comments });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message || "Internal Server Error" });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
   }
-}
+};
 
 export const getDashBoardData = async (req, res) => {
   try {
@@ -61,10 +74,49 @@ export const getDashBoardData = async (req, res) => {
         recentBlogs,
         totalBlogs,
         totalComments,
-        draftBlogs
-      }
+        draftBlogs,
+      },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message || "Internal Server Error" });  
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
   }
-}
+};
+
+export const deleteCommentById = async (req, res) => {
+  try {
+    const { commentId } = req.body;
+    await Comment.findByIdAndDelete(commentId);
+    res
+      .status(200)
+      .json({ success: true, message: "Comment deleted successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
+  }
+};
+
+export const approvedCommentById = async (req, res) => {
+  try {
+    const { commentId } = req.body;
+    await Comment.findByIdAndUpdate(commentId, { isApproved: true });
+    res
+      .status(200)
+      .json({ success: true, message: "Comment approved successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
+  }
+};
