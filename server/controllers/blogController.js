@@ -1,6 +1,7 @@
 import fs from "fs";
 import imagekit from "../config/imagekit.js";
 import Blog from "../models/Blog.js";
+import Comment from "../models/Comment.js";
 
 export const addBlog = async (req, res) => {
   try {
@@ -102,3 +103,29 @@ export const togglePublish = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+
+export const addBlogComment = async (req, res) => {
+  try {
+    const {blog,name,content} = req.body;
+    await Comment.create({
+      blog,
+      name,
+      content
+    });
+    res.status(201).json({ success: true, message: "Comment added successfully" });
+  } catch (error) {
+    
+  }
+}
+
+export const getBlogComments = async (req, res) => {
+  try {
+    const { blogId } = req.body;
+    const comments = await Comment.find({ blog: blogId,isApproved: true }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, comments });
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+}
