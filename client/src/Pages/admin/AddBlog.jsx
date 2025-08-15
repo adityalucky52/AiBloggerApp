@@ -1,147 +1,182 @@
 import React, { useEffect, useRef, useState } from "react";
-import { assets } from "../../assets/assets"; // Assuming this path is correct
+import { assets, blogCategories } from "../../assets/assets";
 import Quill from "quill";
+import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
+// import {parse} from 'marked'
 
 const AddBlog = () => {
+  const { axios } = useAppContext();
+  const [isAdding, setIsAdding] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
-
-  const [image, setImage] = useState(null); // Use null for initial state of no file
+  const [image, setImage] = useState(false);
   const [title, setTitle] = useState("");
   const [subTitle, setSubTitle] = useState("");
-  const [description, setDescription] = useState(""); // Added description state
   const [category, setCategory] = useState("Startup");
   const [isPublished, setIsPublished] = useState(false);
 
   const generateContent = async () => {
-    // Your AI content generation logic will go here
-    console.log("Generating AI content...");
-    setDescription("This is AI-generated content for the blog post.");
+    if (!title) return toast.error("Please enter a title");
+
+    try {
+      setLoading(true);
+      const { data } = await axios.post("/api/blog/generate", {
+        prompt: title,
+      });
+      if (data.success) {
+        quillRef.current.root.innerHTML = parse(data.content);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const onSubmitHandler = (e) => {
-    e.preventDefault();
-    
+  const onSubmitHandler = async (e) => {
+    try {
+      e.preventDefault();
+      setIsAdding(true);
+
+      const blog = {
+        title,
+        subTitle,
+        description: quillRef.current.root.innerHTML,
+        category,
+        isPublished,
+      };
+
+      const formData = new FormData();
+      formData.append("blog", JSON.stringify(blog));
+      formData.append("image", image);
+
+      const { data } = await axios.post("/api/blog/add", formData);
+
+      if (data.success) {
+        toast.success(data.message);
+        setImage(false);
+        setTitle("");
+        setSubTitle("");
+        quillRef.current.root.innerHTML = "";
+        setCategory("Startup");
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   useEffect(() => {
-    if(!quillRef.current && editorRef.current) {
-      quillRef.current = new Quill(editorRef.current, {
-        theme: 'snow'
-      });
+    // Initiate Quill only once
+    if (!quillRef.current && editorRef.current) {
+      quillRef.current = new Quill(editorRef.current, { theme: "snow" });
     }
   }, []);
-
 
   return (
     <form
       onSubmit={onSubmitHandler}
-      className="p-5 sm:p-8 bg-white min-h-full text-gray-800"
+      className="flex-1 bg-blue-50/50 text-gray-600 h-full overflow-scroll"
     >
-      {/* Image Upload Section */}
-      <div className="flex flex-col gap-3">
-        <p className="text-base font-semibold text-gray-600">
-          Upload Thumbnail
-        </p>
+      <div className="bg-white w-full max-w-3xl p-4 md:p-10 sm:m-10 shadow rounded">
+        <p>Upload thumbnail</p>
         <label htmlFor="image">
-          {/* Display uploaded image preview or a default upload icon */}
           <img
-            src={image ? URL.createObjectURL(image) : assets.upload_area}
-            alt="Upload area"
-            className="mt-1 h-32 w-48 object-cover rounded-md cursor-pointer border border-dashed border-gray-400 p-1"
+            src={!image ? assets.upload_area : URL.createObjectURL(image)}
+            alt=""
+            className="mt-2 h-16 rounded cursor-pointer"
+          />
+          <input
+            onChange={(e) => setImage(e.target.files[0])}
+            type="file"
+            id="image"
+            name="image" // <-- Add this
+            hidden
+            required
           />
         </label>
-        <input
-          onChange={(e) => setImage(e.target.files[0])}
-          type="file"
-          id="image"
-          hidden
-          required
-        />
-      </div>
 
-      {/* Blog Title Section */}
-      <div className="flex flex-col gap-2 w-full max-w-lg">
-        <label
-          htmlFor="title"
-          className="text-base font-semibold text-gray-600"
-        >
-          Blog Title
-        </label>
+        <p className="mt-4">Blog title</p>
         <input
-          id="title"
           type="text"
-          value={title}
+          placeholder="Type here"
+          required
+          className="w-full max-w-lg mt-2 p-2 border border-gray-300 outline-none rounded"
           onChange={(e) => setTitle(e.target.value)}
-          className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          placeholder="Enter a compelling title"
-          required
+          value={title}
         />
-      </div>
 
-      {/* Sub Title Section */}
-      <div className="flex flex-col gap-2 w-full max-w-lg">
-        <label
-          htmlFor="subTitle"
-          className="text-base font-semibold text-gray-600"
-        >
-          Sub Title
-        </label>
+        <p className="mt-4">Sub title</p>
         <input
-          id="subTitle"
           type="text"
-          value={subTitle} // Corrected from `title` to `subTitle`
-          onChange={(e) => setSubTitle(e.target.value)}
-          className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          placeholder="Enter a brief sub-title"
+          placeholder="Type here"
           required
+          className="w-full max-w-lg mt-2 p-2 border border-gray-300 outline-none rounded"
+          onChange={(e) => setSubTitle(e.target.value)}
+          value={subTitle}
         />
-      </div>
 
-      {/* Blog Category Section */}
-      <div className="flex flex-col gap-2 w-full max-w-xs">
-        <label
-          htmlFor="category"
-          className="text-base font-semibold text-gray-600"
-        >
-          Blog Category
-        </label>
-        <select
-          id="category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-        >
-          <option value="Startup">Startup</option>
-          <option value="Technology">Technology</option>
-          <option value="Lifestyle">Lifestyle</option>
-        </select>
-      </div>
-
-      {/* Blog Description Section */}
-      <div className="flex flex-col gap-2 w-full max-w-2xl">
-        <div className="flex justify-between items-center">
-          <label
-            htmlFor="description"
-            className="text-base font-semibold text-gray-600"
-          >
-            Blog Description
-          </label>
-          <div className="max-w-lg h-74 pb-16 ">
-
+        <p className="mt-4">Blog Description</p>
+        <div className="max-w-lg h-74 pb-16 sm:pb-10 pt-2 relative">
           <div ref={editorRef}></div>
+          {loading && (
+            <div className="absolute right-0 top-0 bottom-0 left-0 flex items-center justify-center bg-black/10 mt-2">
+              <div className="w-8 h-8 rounded-full border-2 border-t-white animate-spin"></div>
+            </div>
+          )}
           <button
+            disabled={loading}
             type="button"
             onClick={generateContent}
-            className="px-4 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-md hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
-            >
-            ✨ Generate with AI
+            className="absolute bottom-1 right-2 ml-2 text-xs text-white bg-black/70 px-4 py-1.5 rounded hover:underline cursor-pointer"
+          >
+            Generate with AI
           </button>
         </div>
+
+        <p className="mt-4">Blog category</p>
+        <select
+          onChange={(e) => setCategory(e.target.value)}
+          name="category"
+          className="mt-2 px-3 py-2 border text-gray-500 border-gray-300 outline-none rounded"
+        >
+          <option value="">Select category</option>
+          {blogCategories.map((item, index) => {
+            return (
+              <option key={index} value={item}>
+                {item}
+              </option>
+            );
+          })}
+        </select>
+
+        <div className="flex gap-2 mt-4">
+          <p>Publish Now</p>
+          <input
+            type="checkbox"
+            checked={isPublished}
+            className="scale-125 cursor-pointer"
+            onChange={(e) => setIsPublished(e.target.checked)}
+          />
+        </div>
+
+        <button
+          disabled={isAdding}
+          type="submit"
+          className="mt-8 w-40 h-10 bg-secondary text-blue rounded cursor-pointer text-sm"
+        >
+          {isAdding ? "Adding..." : "Add Blog"}
+        </button>
       </div>
-            </div>
     </form>
   );
 };

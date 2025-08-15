@@ -1,15 +1,15 @@
 
 import NavBar from '../Components/NavBar'
 import Header from '../Components/Header'
-import BlogPost from '../Components/BlogPost'
 import Footer from '../Components/Footer'
+import BlogList from '../Components/BlogList'
 
 const Home = () => {
   return (
     <>
     <NavBar/>
     <Header/>
-    <BlogPost/>
+    <BlogList/>
     <Footer/>
     </>
   )

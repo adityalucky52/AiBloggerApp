@@ -1,22 +1,30 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { assets } from '../../assets/assets';
+import { useAppContext } from '../../context/AppContext';
+import toast from 'react-hot-toast';
 
 const Login = () => {
+
+  const {axios,setToken} = useAppContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Here you would typically handle authentication
-    // For this example, we'll just check for non-empty fields
-    if (email && password) {
-      console.log('Logging in with:', { email, password });
-      // On successful login, navigate to the admin dashboard
-      navigate('/admin');
-    } else {
-      alert('Please enter both email and password.');
+    try {
+      const { data } = await axios.post('/api/admin/login', { email, password });
+      if (data.success) {
+        setToken(data.token);
+        localStorage.setItem('token', data.token);
+        axios.defaults.headers.common['Authorization'] = data.token;
+        navigate('/admin/dashboard');
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message || "Login failed");
     }
   };
 
